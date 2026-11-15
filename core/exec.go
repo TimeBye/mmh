@@ -22,7 +22,7 @@ func Exec(cmd, tagOrName string, execGroup, ping bool) {
 	defer cancel()
 
 	// monitor os signal
-	sigs := make(chan os.Signal)
+	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	go func() {
 		// exit all goroutine
@@ -49,8 +49,7 @@ func Exec(cmd, tagOrName string, execGroup, ping bool) {
 			// because it takes time for ssh to establish a connection
 			go func(s *Server) {
 				defer execWg.Done()
-				err = exec(ctx, cmd, s, false)
-				common.PrintErrWithPrefix(s.Name+": 😱 ", err)
+				common.PrintErrWithPrefix(s.Name+": 😱 ", exec(ctx, cmd, s, false))
 			}(s)
 		}
 		execWg.Wait()

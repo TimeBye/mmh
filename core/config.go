@@ -2,7 +2,6 @@ package core
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -10,7 +9,6 @@ import (
 
 	"github.com/olekukonko/tablewriter"
 
-	"github.com/mitchellh/go-homedir"
 	"github.com/mritd/mmh/common"
 )
 
@@ -37,7 +35,7 @@ var (
 // LoadConfig is responsible for loading config files and serializing them to memory objects
 func LoadConfig() {
 	// get user home dir
-	home, err := homedir.Dir()
+	home, err := os.UserHomeDir()
 	common.CheckAndExit(err)
 
 	// load config dir from env
@@ -78,7 +76,7 @@ func LoadConfig() {
 	}
 
 	// get current config
-	bs, err := ioutil.ReadFile(filepath.Join(configDir, ConfigNameFile))
+	bs, err := os.ReadFile(filepath.Join(configDir, ConfigNameFile))
 	if err != nil || len(bs) < 1 {
 		fmt.Println("failed to get current config, use default config(default.yaml)")
 		currentConfigName = "default.yaml"
@@ -126,12 +124,12 @@ func SetConfig(name string) {
 		common.Exit(fmt.Sprintf("config [%s] not exist", name), 1)
 	}
 	// write to file
-	common.CheckAndExit(ioutil.WriteFile(filepath.Join(configDir, ConfigNameFile), []byte(name+".yaml"), 0644))
+	common.CheckAndExit(os.WriteFile(filepath.Join(configDir, ConfigNameFile), []byte(name+".yaml"), 0644))
 }
 
 func ListConfigs() {
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Name", "Path"})
+	table.Header("Name", "Path")
 	for _, c := range Configs {
 		if c.Name+".yaml" == currentConfigName {
 			table.Append([]string{fmt.Sprintf("\033[1;32m%s\033[0m", c.Name), c.Path})
@@ -149,5 +147,5 @@ func initConfig(dir string) {
 	// create basic config file
 	common.CheckAndExit(ConfigExample().WriteTo(filepath.Join(dir, BasicConfigName)))
 	// set current config to default
-	common.CheckAndExit(ioutil.WriteFile(filepath.Join(dir, ConfigNameFile), []byte(BasicConfigName), 0644))
+	common.CheckAndExit(os.WriteFile(filepath.Join(dir, ConfigNameFile), []byte(BasicConfigName), 0644))
 }

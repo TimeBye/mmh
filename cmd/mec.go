@@ -15,12 +15,25 @@ var mec = &cobra.Command{
 	Use:   "mec [OPTIONS] SERVER|TAG COMMAND",
 	Short: "Batch exec command",
 	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) == 0 {
+			_ = cmd.Help()
+			return
+		}
+		// only command given: select the server interactively
+		if len(args) == 1 && !execGroup {
+			name, ok := core.SelectServer()
+			if !ok {
+				return
+			}
+			core.Exec(args[0], name, false, false)
+			return
+		}
 		if len(args) < 2 {
 			_ = cmd.Help()
-		} else {
-			cs := strings.Join(args[1:], " ")
-			core.Exec(cs, args[0], execGroup, false)
+			return
 		}
+		cs := strings.Join(args[1:], " ")
+		core.Exec(cs, args[0], execGroup, false)
 	},
 	ValidArgsFunction: func(_ *cobra.Command, _ []string, _ string) (res []string, _ cobra.ShellCompDirective) {
 		for _, s := range core.ListServers(true) {

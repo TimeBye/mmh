@@ -2,16 +2,15 @@ package core
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
+	"os"
 	osexec "os/exec"
 	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
-	jsoniter "github.com/json-iterator/go"
-	"github.com/mitchellh/go-homedir"
 	"github.com/mritd/mmh/common"
 	"github.com/mritd/mmh/sshutils"
 	"golang.org/x/crypto/ssh"
@@ -126,13 +125,13 @@ func (s *Server) authMethod() []ssh.AuthMethod {
 // privateKeyFileAuth return private key auth method
 func privateKeyFileAuth(file, password string) (ssh.AuthMethod, error) {
 	if strings.HasPrefix(file, "~") {
-		home, err := homedir.Dir()
+		home, err := os.UserHomeDir()
 		if err != nil {
 			return nil, err
 		}
 		file = strings.Replace(file, "~", home, 1)
 	}
-	buffer, err := ioutil.ReadFile(file)
+	buffer, err := os.ReadFile(file)
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +159,7 @@ func keyboardAuth(authCmd string) ssh.AuthMethod {
 	return ssh.KeyboardInteractive(func(user, instruction string, questions []string, echos []bool) (answers []string, err error) {
 		cs, args := common.ParseCommand(authCmd)
 		cmd := osexec.Command(cs, args...)
-		reqBs, err := jsoniter.Marshal(KeyBoardRequest{
+		reqBs, err := json.Marshal(KeyBoardRequest{
 			User:        user,
 			Instruction: instruction,
 			Questions:   questions,

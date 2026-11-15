@@ -9,8 +9,8 @@
 
 ## 命令列表
 
-mmh 目前只支持 mac 和 linux 平台，对于 windows 用户在 WSL2 ubuntu 系统下已经测试通过。**mmh 在安装时
-仅会将原始二进制文件复制一份到安装目录(默认 `/usr/local/bin`)，然后会采用软链接的方式创建其他快捷命令。**
+mmh 目前提供 macOS (Intel / Apple Silicon) 的预编译二进制文件，Linux 平台可自行源码编译。**mmh 在安装时
+仅会将原始二进制文件复制一份到安装目录(默认当前二进制文件所在目录)，然后会采用软链接的方式创建其他快捷命令。**
 目前 mmh 已包含命令列表以及软链接如下:
 
 - **`mmh cf -> mcf`: 用于切换 context，同时包含一个别名为 `mcx` 的命令**
@@ -20,8 +20,14 @@ mmh 目前只支持 mac 和 linux 平台，对于 windows 用户在 WSL2 ubuntu 
 - **`mmh cp -> mcp`: 在本地与远端服务器(或一组服务器)之间复制文件**
 - **`mmh ping -> mping`: 针对远端服务器执行 ping 检测**
 - **`mmh tun -> mtun`: 在本地与远端服务器之间创建 tcp 隧道，支持反向创建**
+- **`mmh install`: 将当前二进制安装到指定目录(默认当前二进制文件所在目录)并创建上述快捷命令软链接**
 
-其他 install 等命令为辅助命令，暂不做详细说明。
+`mgo`、`mping`、`mec`、`mcp`、`mtun` 在缺少服务器参数时，会进入与 `mmh` 相同的交互选择界面；`mcx`
+不带参数时同样会进入配置文件的交互选择。其中 `mcp` 省略服务器时，`:/remote/path` 表示从所选服务器下载，
+普通路径表示上传到所选服务器。
+
+当当前 context 不是 `basic.yaml` 时，交互列表只显示当前 context 中的服务器，basic 中的服务器不会混入；
+需要访问 basic 服务器时仍可显式指定名称，例如 `mgo SERVER_NAME`。
 
 ## 无限跳板
 

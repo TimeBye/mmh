@@ -2,7 +2,7 @@
 
 __mmh_debug()
 {
-    if [[ -n ${BASH_COMP_DEBUG_FILE} ]]; then
+    if [[ -n ${BASH_COMP_DEBUG_FILE:-} ]]; then
         echo "$*" >> "${BASH_COMP_DEBUG_FILE}"
     fi
 }
@@ -49,9 +49,10 @@ __mmh_handle_go_custom_completion()
     local out requestComp lastParam lastChar comp directive args
 
     # Prepare the command to request completions for the program.
-    # Calling ${words[0]} instead of directly mmh allows to handle aliases
+    # Calling ${words[0]} instead of directly mmh allows handling aliases
     args=("${words[@]:1}")
-    requestComp="${words[0]} __completeNoDesc ${args[*]}"
+    # Disable ActiveHelp which is not supported for bash completion v1
+    requestComp="MMH_ACTIVE_HELP=0 ${words[0]} __completeNoDesc ${args[*]}"
 
     lastParam=${words[$((${#words[@]}-1))]}
     lastChar=${lastParam:$((${#lastParam}-1)):1}
@@ -77,7 +78,7 @@ __mmh_handle_go_custom_completion()
         directive=0
     fi
     __mmh_debug "${FUNCNAME[0]}: the completion directive is: ${directive}"
-    __mmh_debug "${FUNCNAME[0]}: the completions are: ${out[*]}"
+    __mmh_debug "${FUNCNAME[0]}: the completions are: ${out}"
 
     if [ $((directive & shellCompDirectiveError)) -ne 0 ]; then
         # Error code.  No completion.
@@ -103,7 +104,7 @@ __mmh_handle_go_custom_completion()
         local fullFilter filter filteringCmd
         # Do not use quotes around the $out variable or else newline
         # characters will be kept.
-        for filter in ${out[*]}; do
+        for filter in ${out}; do
             fullFilter+="$filter|"
         done
 
@@ -112,9 +113,9 @@ __mmh_handle_go_custom_completion()
         $filteringCmd
     elif [ $((directive & shellCompDirectiveFilterDirs)) -ne 0 ]; then
         # File completion for directories only
-        local subDir
+        local subdir
         # Use printf to strip any trailing newline
-        subdir=$(printf "%s" "${out[0]}")
+        subdir=$(printf "%s" "${out}")
         if [ -n "$subdir" ]; then
             __mmh_debug "Listing directories in $subdir"
             __mmh_handle_subdirs_in_dir_flag "$subdir"
@@ -125,7 +126,7 @@ __mmh_handle_go_custom_completion()
     else
         while IFS='' read -r comp; do
             COMPREPLY+=("$comp")
-        done < <(compgen -W "${out[*]}" -- "$cur")
+        done < <(compgen -W "${out}" -- "$cur")
     fi
 }
 
@@ -165,13 +166,19 @@ __mmh_handle_reply()
                     PREFIX=""
                     cur="${cur#*=}"
                     ${flags_completion[${index}]}
-                    if [ -n "${ZSH_VERSION}" ]; then
+                    if [ -n "${ZSH_VERSION:-}" ]; then
                         # zsh completion needs --flag= prefix
                         eval "COMPREPLY=( \"\${COMPREPLY[@]/#/${flag}=}\" )"
                     fi
                 fi
             fi
-            return 0;
+
+            if [[ -z "${flag_parsing_disabled}" ]]; then
+                # If flag parsing is enabled, we have completed the flags and can return.
+                # If flag parsing is disabled, we may not know all (or any) of the flags, so we fallthrough
+                # to possibly call handle_go_custom_completion.
+                return 0;
+            fi
             ;;
     esac
 
@@ -210,13 +217,13 @@ __mmh_handle_reply()
     fi
 
     if [[ ${#COMPREPLY[@]} -eq 0 ]]; then
-		if declare -F __mmh_custom_func >/dev/null; then
-			# try command name qualified custom func
-			__mmh_custom_func
-		else
-			# otherwise fall back to unqualified for compatibility
-			declare -F __custom_func >/dev/null && __custom_func
-		fi
+        if declare -F __mmh_custom_func >/dev/null; then
+            # try command name qualified custom func
+            __mmh_custom_func
+        else
+            # otherwise fall back to unqualified for compatibility
+            declare -F __custom_func >/dev/null && __custom_func
+        fi
     fi
 
     # available in bash-completion >= 2, not always present on macOS
@@ -250,7 +257,7 @@ __mmh_handle_flag()
 
     # if a command required a flag, and we found it, unset must_have_one_flag()
     local flagname=${words[c]}
-    local flagvalue
+    local flagvalue=""
     # if the word contained an =
     if [[ ${words[c]} == *"="* ]]; then
         flagvalue=${flagname#*=} # take in as flagvalue after the =
@@ -269,7 +276,7 @@ __mmh_handle_flag()
 
     # keep flag value with flagname as flaghash
     # flaghash variable is an associative array which is only supported in bash > 3.
-    if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
+    if [[ -z "${BASH_VERSION:-}" || "${BASH_VERSINFO[0]:-}" -gt 3 ]]; then
         if [ -n "${flagvalue}" ] ; then
             flaghash[${flagname}]=${flagvalue}
         elif [ -n "${words[ $((c+1)) ]}" ] ; then
@@ -281,7 +288,7 @@ __mmh_handle_flag()
 
     # skip the argument to a two word flag
     if [[ ${words[c]} != *"="* ]] && __mmh_contains_word "${words[c]}" "${two_word_flags[@]}"; then
-			  __mmh_debug "${FUNCNAME[0]}: found a flag ${words[c]}, skip the next argument"
+        __mmh_debug "${FUNCNAME[0]}: found a flag ${words[c]}, skip the next argument"
         c=$((c+1))
         # if we are looking for a flags value, don't show commands
         if [[ $c -eq $cword ]]; then
@@ -341,7 +348,7 @@ __mmh_handle_word()
         __mmh_handle_command
     elif __mmh_contains_word "${words[c]}" "${command_aliases[@]}"; then
         # aliashash variable is an associative array which is only supported in bash > 3.
-        if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
+        if [[ -z "${BASH_VERSION:-}" || "${BASH_VERSINFO[0]:-}" -gt 3 ]]; then
             words[c]=${aliashash[${words[c]}]}
             __mmh_handle_command
         else
@@ -351,6 +358,143 @@ __mmh_handle_word()
         __mmh_handle_noun
     fi
     __mmh_handle_word
+}
+
+_mmh_completion_bash()
+{
+    last_command="mmh_completion_bash"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--no-descriptions")
+    local_nonpersistent_flags+=("--no-descriptions")
+    flags+=("--completion=")
+    two_word_flags+=("--completion")
+    flags+=("--version")
+    flags+=("-v")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    has_completion_function=1
+    noun_aliases=()
+}
+
+_mmh_completion_fish()
+{
+    last_command="mmh_completion_fish"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--no-descriptions")
+    local_nonpersistent_flags+=("--no-descriptions")
+    flags+=("--completion=")
+    two_word_flags+=("--completion")
+    flags+=("--version")
+    flags+=("-v")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    has_completion_function=1
+    noun_aliases=()
+}
+
+_mmh_completion_powershell()
+{
+    last_command="mmh_completion_powershell"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--no-descriptions")
+    local_nonpersistent_flags+=("--no-descriptions")
+    flags+=("--completion=")
+    two_word_flags+=("--completion")
+    flags+=("--version")
+    flags+=("-v")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    has_completion_function=1
+    noun_aliases=()
+}
+
+_mmh_completion_zsh()
+{
+    last_command="mmh_completion_zsh"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--no-descriptions")
+    local_nonpersistent_flags+=("--no-descriptions")
+    flags+=("--completion=")
+    two_word_flags+=("--completion")
+    flags+=("--version")
+    flags+=("-v")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    has_completion_function=1
+    noun_aliases=()
+}
+
+_mmh_completion()
+{
+    last_command="mmh_completion"
+
+    command_aliases=()
+
+    commands=()
+    commands+=("bash")
+    commands+=("fish")
+    commands+=("powershell")
+    commands+=("zsh")
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--completion=")
+    two_word_flags+=("--completion")
+    flags+=("--version")
+    flags+=("-v")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    has_completion_function=1
+    noun_aliases=()
 }
 
 _mmh_help()
@@ -392,8 +536,8 @@ _mmh_mcp()
     flags_with_completion=()
     flags_completion=()
 
-    flags+=("--group")
-    flags+=("-g")
+    flags+=("--tag")
+    flags+=("-t")
     flags+=("--completion=")
     two_word_flags+=("--completion")
     flags+=("--version")
@@ -605,6 +749,7 @@ _mmh_root_command()
     command_aliases=()
 
     commands=()
+    commands+=("completion")
     commands+=("help")
     commands+=("mcp")
     commands+=("mcs")
@@ -637,7 +782,7 @@ _mmh_root_command()
 
 __start_mmh()
 {
-    local cur prev words cword
+    local cur prev words cword split
     declare -A flaghash 2>/dev/null || :
     declare -A aliashash 2>/dev/null || :
     if declare -F _init_completion >/dev/null 2>&1; then
@@ -647,17 +792,20 @@ __start_mmh()
     fi
 
     local c=0
+    local flag_parsing_disabled=
     local flags=()
     local two_word_flags=()
     local local_nonpersistent_flags=()
     local flags_with_completion=()
     local flags_completion=()
     local commands=("mmh")
+    local command_aliases=()
     local must_have_one_flag=()
     local must_have_one_noun=()
-    local has_completion_function
-    local last_command
+    local has_completion_function=""
+    local last_command=""
     local nouns=()
+    local noun_aliases=()
 
     __mmh_handle_word
 }

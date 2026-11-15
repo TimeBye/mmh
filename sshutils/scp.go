@@ -2,7 +2,6 @@ package sshutils
 
 import (
 	"errors"
-	"github.com/mitchellh/go-homedir"
 	"io"
 	"os"
 	"path"
@@ -399,7 +398,7 @@ func (s *scpClient) replaceHome(path string, isLocal bool) string {
 		var err error
 
 		if isLocal {
-			home, err = homedir.Dir()
+			home, err = os.UserHomeDir()
 			if err != nil {
 				return path
 			}

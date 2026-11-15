@@ -1,13 +1,12 @@
 package core
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
-	osexec "os/exec"
-
-	"github.com/xyproto/clip"
 
 	"github.com/gorilla/mux"
+
+	"github.com/mritd/mmh/common"
 )
 
 // registerAPI register routes to the local http address
@@ -30,14 +29,14 @@ func registerAPI(router *mux.Router) {
 			return
 		}
 
-		bs, err := ioutil.ReadAll(r.Body)
+		bs, err := io.ReadAll(r.Body)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			_, _ = w.Write([]byte(err.Error() + "\n"))
 			return
 		}
 
-		err = clip.WriteAll(string(bs))
+		err = common.ClipboardWriteAll(string(bs))
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			_, _ = w.Write([]byte(err.Error() + "\n"))
@@ -53,14 +52,13 @@ func registerAPI(router *mux.Router) {
 			_, _ = w.Write([]byte("only support post method\n"))
 			return
 		}
-		bs, err := ioutil.ReadAll(r.Body)
+		bs, err := io.ReadAll(r.Body)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			_, _ = w.Write([]byte(err.Error() + "\n"))
 			return
 		}
-		cmd := osexec.Command("noti", "-t", "mmh", "-m", string(bs))
-		err = cmd.Run()
+		err = common.Notify("mmh", string(bs))
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			_, _ = w.Write([]byte(err.Error() + "\n"))

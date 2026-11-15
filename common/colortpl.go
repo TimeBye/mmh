@@ -23,10 +23,16 @@ const (
 	ColorWhite   = "white"
 )
 
-var colorOnce sync.Once
-var tplCh = make(chan *template.Template, 1)
-var tplCacheMux sync.RWMutex
-var tplCacheMap = make(map[string]*template.Template, 7)
+// colorOrder is the rotation order used to assign colors to output prefixes
+var colorOrder = []string{
+	ColorRed,
+	ColorGreen,
+	ColorYellow,
+	ColorBlue,
+	ColorMagenta,
+	ColorCyan,
+	ColorWhite,
+}
 
 var colorFuncMap = template.FuncMap{
 	ColorRed:     color.New(color.FgRed).SprintfFunc(),
@@ -38,34 +44,30 @@ var colorFuncMap = template.FuncMap{
 	ColorWhite:   color.New(color.FgWhite).SprintfFunc(),
 }
 
-func RenderedTpl() *template.Template {
-	colorOnce.Do(func() {
-		go func() {
-			for {
-				for k := range colorFuncMap {
-					tpl, _ := template.New("").Funcs(colorFuncMap).Parse(fmt.Sprintf(renderTpl, k))
-					tplCh <- tpl
-				}
-			}
-		}()
-	})
-	return <-tplCh
-}
+var (
+	tplCacheMux sync.Mutex
+	tplCacheMap = make(map[string]*template.Template)
+	colorIndex  int
+)
 
 type ColorLine struct {
 	Prefix string
 	Value  string
 }
 
+// RenderedOutput writes a line with a colored prefix, every distinct prefix is
+// assigned a color in rotation and its template is cached for reuse
 func RenderedOutput(wr io.Writer, line ColorLine) error {
-	colorTpl, ok := tplCacheMap[line.Prefix]
+	tplCacheMux.Lock()
+	tpl, ok := tplCacheMap[line.Prefix]
 	if !ok {
-		colorTpl = RenderedTpl()
-		tplCacheMux.Lock()
-		tplCacheMap[line.Prefix] = colorTpl
-		tplCacheMux.Unlock()
+		colorName := colorOrder[colorIndex%len(colorOrder)]
+		colorIndex++
+		tpl = template.Must(template.New("").Funcs(colorFuncMap).Parse(fmt.Sprintf(renderTpl, colorName)))
+		tplCacheMap[line.Prefix] = tpl
 	}
-	return colorTpl.Execute(wr, line)
+	tplCacheMux.Unlock()
+	return tpl.Execute(wr, line)
 }
 
 func Converted2Rendered(r io.Reader, w io.Writer, prefix string) {

@@ -6,20 +6,30 @@
 
 ## 如何安装
 
-目前官方仓库提供了 mac、linux 的预编译二进制文件，你可以直接下载并安装
+目前官方仓库提供了 macOS 的预编译二进制文件，Intel 与 Apple Silicon 均可使用；推荐下载 universal 版本
 
 ``` sh
 # 请自行查看仓库最新 Release 版本号并替换此版本号
-export MMH_VERSION=v1.5.4
+export MMH_VERSION=v1.6.0
 # 下载
-wget https://github.com/mritd/mmh/releases/download/${MMH_VERSION}/mmh_darwin_amd64
+wget https://github.com/mritd/mmh/releases/download/${MMH_VERSION}/mmh_darwin_universal
 # 增加可执行权限
-chmod +x mmh_darwin_amd64
-# 安装(安装时需要输入 sudo 密码，安装完成后本文件可删除)
-./mmh_darwin_amd64 install
+chmod +x mmh_darwin_universal
+# 安装 mmh 并自动创建 mcp/mcs/mcx/mec/mgo/mping/mtun 快捷命令
+./mmh_darwin_universal install
 ```
 
-**mmh 默认会安装到 `/usr/local/bin` 目录，如果想要安装到其他目录请使用 `--dir` 选项。**
+`install` 默认安装到当前二进制文件所在目录，不写入系统目录，无需 sudo。如需安装到 `/usr/local/bin` 或其他目录，可通过 `--dir` 指定；目录不在 `PATH` 中时会给出提示：
+
+``` sh
+# 安装到 /usr/local/bin（需要 sudo）
+sudo ./mmh_darwin_universal install --dir /usr/local/bin
+
+# 安装到用户目录
+./mmh_darwin_universal install --dir "$HOME/.local/bin"
+```
+
+Intel 芯片也可下载 `mmh_darwin_amd64`，Apple Silicon 芯片也可下载 `mmh_darwin_arm64`，两者与 universal 版本用法一致。
 
 ## 如何使用
 
@@ -27,15 +37,14 @@ mmh 安装完成后可直接在命令行运行 `mmh` 命令进行预览；**命�
 
 ``` sh
 ➜  ~ mmh
-Use the arrow keys to navigate: ↓ ↑ → ←
-Select Login Server:
-»  prod11: root@10.10.4.11
-  prod12: root@10.10.4.12
-
---------- Login Server ----------
-Name: prod11
-User: root
-Address: 10.10.4.11:22
+Select Login Server (1/1):
+┌───┬───┬─────────┬──────┬────────────┬──────┐
+│   │ # │  NAME   │ USER │  ADDRESS   │ PORT │
+├───┼───┼─────────┼──────┼────────────┼──────┤
+│ » │ 1 │ prod11  │ root │ 10.10.4.11 │ 22   │
+│   │ 2 │ prod12  │ root │ 10.10.4.12 │ 22   │
+└───┴───┴─────────┴──────┴────────────┴──────┘
+↑/↓ 选择  ←/→ 翻页  1-9 快速跳转  Enter 确认  q 退出
 ```
 
 在配置正确的情况下选择任意一个服务器回车即可完成登录，**不过样例配置中的服务器是无法链接的，你需要自行调整增加真实服务器配置。**

@@ -12,9 +12,8 @@ import (
 
 	"github.com/mritd/mmh/common"
 
-	"golang.org/x/crypto/ssh/terminal"
-
 	"golang.org/x/crypto/ssh"
+	"golang.org/x/term"
 )
 
 type SSHSession struct {
@@ -52,17 +51,17 @@ func (s *SSHSession) Close() error {
 func (s *SSHSession) updateTerminalSize() {
 	go func() {
 		// SIGWINCH is sent to the process when the window size of the terminal has changed.
-		sigs := make(chan os.Signal)
+		sigs := make(chan os.Signal, 1)
 		signal.Notify(sigs, syscall.SIGWINCH)
 
 		fd := int(os.Stdin.Fd())
-		termWidth, termHeight, err := terminal.GetSize(fd)
+		termWidth, termHeight, err := term.GetSize(fd)
 		if !common.CheckErr(err) {
 			return
 		}
 
 		for range sigs {
-			currTermWidth, currTermHeight, err := terminal.GetSize(fd)
+			currTermWidth, currTermHeight, err := term.GetSize(fd)
 			if !common.CheckErr(err) {
 				continue
 			}
@@ -95,11 +94,11 @@ func (s *SSHSession) TerminalWithKeepAlive(interval time.Duration) error {
 	}
 
 	fd := int(os.Stdin.Fd())
-	state, err := terminal.MakeRaw(fd)
+	state, err := term.MakeRaw(fd)
 	if err != nil {
 		return err
 	}
-	defer func() { _ = terminal.Restore(fd, state) }()
+	defer func() { _ = term.Restore(fd, state) }()
 
 	// request pty
 	err = s.requestPty(fd)
@@ -163,7 +162,7 @@ func (s *SSHSession) TerminalWithKeepAlive(interval time.Duration) error {
 // and other information are automatically set by default.
 func (s *SSHSession) requestPty(fd int) error {
 	// get terminal size
-	termWidth, termHeight, err := terminal.GetSize(fd)
+	termWidth, termHeight, err := term.GetSize(fd)
 	if err != nil {
 		return err
 	}

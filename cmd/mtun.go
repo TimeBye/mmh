@@ -15,11 +15,21 @@ var mtun = &cobra.Command{
 	Use:   "mtun SERVER -l LEFT_ADDR -r RIGHT_ADDR [OPTIONS]",
 	Short: "Open a ssh tunnel",
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) == 1 && tunLeftAddr != "" && tunRightAddr != "" {
-			core.Tunnel(args[0], tunLeftAddr, tunRightAddr, tunReverse)
-		} else {
+		if len(args) > 1 || tunLeftAddr == "" || tunRightAddr == "" {
 			_ = cmd.Help()
+			return
 		}
+		server := ""
+		if len(args) == 1 {
+			server = args[0]
+		} else {
+			name, ok := core.SelectServer()
+			if !ok {
+				return
+			}
+			server = name
+		}
+		core.Tunnel(server, tunLeftAddr, tunRightAddr, tunReverse)
 	},
 	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) (res []string, _ cobra.ShellCompDirective) {
 		for _, s := range core.ListServers(true) {

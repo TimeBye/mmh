@@ -12,7 +12,12 @@ var mcx = &cobra.Command{
 	Short: "Change config file",
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 1 {
-			core.ListConfigs()
+			name, ok := core.SelectConfig()
+			if !ok {
+				return
+			}
+			core.SetConfig(name)
+			fmt.Printf("👉 mmh changed config to [%s.yaml]...\n", name)
 			return
 		}
 

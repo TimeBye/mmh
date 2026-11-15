@@ -12,9 +12,14 @@ var mping = &cobra.Command{
 	Use:   "mping SERVER",
 	Short: "Ping server",
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) == 1 {
+		switch len(args) {
+		case 0:
+			if name, ok := core.SelectServer(); ok {
+				core.Ping(name)
+			}
+		case 1:
 			core.Ping(args[0])
-		} else {
+		default:
 			_ = cmd.Help()
 		}
 	},

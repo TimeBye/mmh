@@ -29,10 +29,19 @@ func ListServers(serverSort bool) Servers {
 	return servers
 }
 
+// InteractiveServers returns the servers shown by interactive selectors in YAML order.
+// When the current context is not the basic context, basic servers are hidden.
+func InteractiveServers() Servers {
+	if currentConfig.configPath == basicConfig.configPath {
+		return basicConfig.Servers
+	}
+	return currentConfig.Servers
+}
+
 // PrintServers print server list
 func PrintServers(serverSort bool) {
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Name", "User", "Tags", "Address"})
+	table.Header("Name", "User", "Tags", "Address")
 	ss := ListServers(serverSort)
 	for _, s := range ss {
 		table.Append([]string{s.Name, s.User, fmt.Sprint(s.Tags), fmt.Sprintf("%s:%d", s.Address, s.Port)})

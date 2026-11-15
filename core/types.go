@@ -2,10 +2,10 @@ package core
 
 import (
 	"errors"
-	"io/ioutil"
+	"os"
 	"time"
 
-	"gopkg.in/yaml.v2"
+	"go.yaml.in/yaml/v4"
 )
 
 // BasicServerConfig server basic config
@@ -82,7 +82,7 @@ func (cfg *Config) Write() error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(cfg.configPath, out, 0644)
+	return os.WriteFile(cfg.configPath, out, 0644)
 }
 
 // WriteTo write config to yaml file
@@ -99,7 +99,7 @@ func (cfg *Config) Load() error {
 	if cfg.configPath == "" {
 		return errors.New("config path not set")
 	}
-	buf, err := ioutil.ReadFile(cfg.configPath)
+	buf, err := os.ReadFile(cfg.configPath)
 	if err != nil {
 		return err
 	}

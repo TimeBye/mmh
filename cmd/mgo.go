@@ -12,9 +12,14 @@ var mgo = &cobra.Command{
 	Use:   "mgo SERVER_NAME",
 	Short: "Login server",
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) == 1 {
+		switch len(args) {
+		case 0:
+			if name, ok := core.SelectServer(); ok {
+				core.SingleLogin(name)
+			}
+		case 1:
 			core.SingleLogin(args[0])
-		} else {
+		default:
 			_ = cmd.Help()
 		}
 	},

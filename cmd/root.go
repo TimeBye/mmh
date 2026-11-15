@@ -30,6 +30,10 @@ var rootCmd = &cobra.Command{
 			fmt.Printf(versionTpl, banner, Version, runtime.GOOS+"/"+runtime.GOARCH, BuildDate, CommitID)
 			return
 		}
+		if len(args) == 0 {
+			core.InteractiveLogin()
+			return
+		}
 		_ = cmd.Help()
 	},
 }

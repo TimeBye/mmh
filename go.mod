@@ -1,21 +1,31 @@
 module github.com/mritd/mmh
 
-go 1.16
+go 1.26.0
 
 require (
-	github.com/fatih/color v1.14.1
-	github.com/gorilla/mux v1.8.0
-	github.com/json-iterator/go v1.1.12
-	github.com/kr/pretty v0.1.0 // indirect
-	github.com/mitchellh/go-homedir v1.1.0
-	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
-	github.com/olekukonko/tablewriter v0.0.5
-	github.com/pkg/sftp v1.13.5
-	github.com/spf13/cobra v1.6.1
-	github.com/xyproto/clip v0.3.1
-	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3
-	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
-	gopkg.in/yaml.v2 v2.4.0
+	github.com/atotto/clipboard v0.1.4
+	github.com/fatih/color v1.19.0
+	github.com/gorilla/mux v1.8.1
+	github.com/mattn/go-runewidth v0.0.19
+	github.com/olekukonko/tablewriter v1.1.5
+	github.com/pkg/sftp v1.13.12
+	github.com/spf13/cobra v1.10.2
+	go.yaml.in/yaml/v4 v4.0.0
+	golang.org/x/crypto v0.59.0
+	golang.org/x/term v0.48.0
 )
 
-replace github.com/xyproto/clip v0.3.1 => github.com/mritd/clip v0.3.2-0.20200817040708-ed826a857db0
+require (
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
+	github.com/clipperhouse/displaywidth v0.10.0 // indirect
+	github.com/clipperhouse/uax29/v2 v2.6.0 // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
+	github.com/kr/fs v0.1.0 // indirect
+	github.com/mattn/go-colorable v0.1.14 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
+	github.com/olekukonko/cat v0.0.0-20250911104152-50322a0618f6 // indirect
+	github.com/olekukonko/errors v1.2.0 // indirect
+	github.com/olekukonko/ll v0.1.6 // indirect
+	github.com/spf13/pflag v1.0.9 // indirect
+	golang.org/x/sys v0.50.0 // indirect
+)
