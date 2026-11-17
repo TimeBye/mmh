@@ -522,6 +522,34 @@ _mmh_help()
     noun_aliases=()
 }
 
+_mmh_install()
+{
+    last_command="mmh_install"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--dir=")
+    two_word_flags+=("--dir")
+    local_nonpersistent_flags+=("--dir")
+    local_nonpersistent_flags+=("--dir=")
+    flags+=("--completion=")
+    two_word_flags+=("--completion")
+    flags+=("--version")
+    flags+=("-v")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
 _mmh_mcp()
 {
     last_command="mmh_mcp"
@@ -692,6 +720,8 @@ _mmh_mtun()
     flags_with_completion=()
     flags_completion=()
 
+    flags+=("--dynamic")
+    flags+=("-D")
     flags+=("--left=")
     two_word_flags+=("--left")
     flags_with_completion+=("--left")
@@ -751,6 +781,7 @@ _mmh_root_command()
     commands=()
     commands+=("completion")
     commands+=("help")
+    commands+=("install")
     commands+=("mcp")
     commands+=("mcs")
     commands+=("mcx")

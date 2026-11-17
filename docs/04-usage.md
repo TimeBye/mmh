@@ -117,4 +117,28 @@ mtun -l 127.0.0.1:8080 -r baidu.com:80 prod11
 mtun -l baidu.com:80 -r 127.0.0.1:8080 --reverse prod11
 ```
 
+### 动态端口转发(SOCKS5)
+
+`mtun -D` 提供与 `ssh -D` 相同的动态端口转发功能: 在本地启动一个 SOCKS5 代理，
+所有代理流量均通过目标服务器的 ssh 隧道转发(支持跳板链)，无需预先指定目标地址:
+
+``` sh
+# 在默认地址 127.0.0.1:8080 启动 SOCKS5 代理，经由 prod11 转发
+mtun -D prod11
+
+# 指定监听地址(以下写法均可)
+mtun -D 8080 prod11
+mtun -D 0.0.0.0:1080 prod11
+mtun -D=0.0.0.0:1080 prod11
+
+# 省略服务器名时进入交互选择界面
+mtun -D
+
+# 配合 curl 使用(socks5h 表示由远端解析 DNS)
+curl -x socks5h://127.0.0.1:8080 https://example.com
+```
+
+**注意:** `-D` 与 `-l/-r/--reverse` 互斥，不能同时使用；当前仅支持 CONNECT(TCP) 转发，
+不支持 UDP 转发，与 `ssh -D` 行为一致。
+
 [首页](.) | [上一页](03-config) | [下一页](05-advanced)
